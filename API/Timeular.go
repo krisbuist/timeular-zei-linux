@@ -1,4 +1,4 @@
-package main
+package API
 
 type Activity struct {
 	ID          string `json:"id"`
@@ -21,13 +21,10 @@ type TimeEntry struct {
 }
 
 type Timeular struct {
-	Activities           []Activity
-	CurrentTracking      *CurrentTracking
-	TimeEntries          []TimeEntry
-	OnOrientationChanged func(side int)
+	Activities []Activity
 }
 
-func (timeular *Timeular) getActivity(deviceSide int) *Activity {
+func (timeular *Timeular) GetActivity(deviceSide int) *Activity {
 	for _, a := range timeular.Activities {
 		if a.DeviceSide == deviceSide {
 			return &a

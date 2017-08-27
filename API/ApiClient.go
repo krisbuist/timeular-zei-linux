@@ -1,22 +1,19 @@
-package main
+package API
 
 import (
-	"net/http"
-	"encoding/json"
 	"bytes"
-	"io/ioutil"
-	"time"
-	"fmt"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
-	"github.com/0xAX/notificator"
+	"net/http"
+	"time"
 )
 
-type ApiClient struct {
-	BaseUrl  string
-	Token    string
-	Notifier *notificator.Notificator
-	Timeular *Timeular
+type Client struct {
+	BaseUrl string
+	Token   string
 }
 
 type AuthorizationRequest struct {
@@ -52,19 +49,17 @@ type StopActivityResponse struct {
 	CreatedTimeEntry TimeEntry `json:"createdTimeEntry"`
 }
 
-func (client *ApiClient) run(t *Timeular) {
-	client.Notifier = notificator.New(notificator.Options{
-		DefaultIcon: "/home/kris/Desktop/timeular.png",
-		AppName:     "ZEI",
-	})
-
-	client.Timeular = t
-
-	t.OnOrientationChanged = client.onActivityChange
+type ErrorResponse struct {
+	Timestamp int    `json:"timestamp"`
+	Status    int    `json:"status"`
+	Error     string `json:"error"`
+	Exception string `json:"exception"`
+	Message   string `json:"message"`
+	Path      string `json:"path"`
 }
 
-func (client *ApiClient) authenticate() error {
-	authString, _ := ioutil.ReadFile("config.json")
+func (client *Client) Authenticate() error {
+	authString, _ := ioutil.ReadFile("./config.json")
 	request := &AuthorizationRequest{}
 	json.Unmarshal(authString, request)
 
@@ -79,55 +74,29 @@ func (client *ApiClient) authenticate() error {
 	return nil
 }
 
-func (client *ApiClient) loadCurrentTracking(t *Timeular) error {
+func (client *Client) GetCurrentTracking() (*CurrentTracking, error) {
 
 	response := &CurrentTrackingResponse{}
 
 	if err := client.doGet("/tracking", response); err != nil {
-		return err
+		return nil, err
 	}
 
-	t.CurrentTracking = response.CurrentTracking
-
-	return nil
+	return response.CurrentTracking, nil
 }
 
-func (client *ApiClient) loadActivities(t *Timeular) error {
+func (client *Client) GetActivities() ([]Activity, error) {
 
 	response := &ActivitiesResponse{}
 
 	if err := client.doGet("/activities", response); err != nil {
-		return err
+		return []Activity{}, err
 	}
 
-	t.Activities = response.Activities
-
-	return nil
+	return response.Activities, nil
 }
 
-func (client *ApiClient) onActivityChange(sideID int) {
-	log.Printf("Device side: %d", sideID)
-
-	matched := client.Timeular.getActivity(sideID)
-	client.loadCurrentTracking(client.Timeular)
-	current := client.Timeular.CurrentTracking
-
-	if current != nil && matched != nil && current.Activity.ID == matched.ID {
-		return
-	}
-
-	if current != nil {
-		client.stopActivity(current.Activity)
-		client.Timeular.CurrentTracking = nil
-	}
-
-	if matched != nil {
-		client.Timeular.CurrentTracking = client.startActivity(*matched)
-	}
-}
-
-func (client *ApiClient) startActivity(a Activity) *CurrentTracking {
-	client.notify(fmt.Sprintf("Starting activity %s", a.Name))
+func (client *Client) StartActivity(a Activity) *CurrentTracking {
 
 	requestBody := &StartActivityRequest{
 		StartedAt: TimeularTime{time.Now()},
@@ -136,15 +105,13 @@ func (client *ApiClient) startActivity(a Activity) *CurrentTracking {
 	response := &StartActivityResponse{}
 
 	if err := client.doPost(fmt.Sprintf("/tracking/%s/start", a.ID), requestBody, response); err != nil {
-		log.Println("Error: ", err)
 		return nil
 	}
 
 	return &response.CurrentTracking
 }
 
-func (client *ApiClient) stopActivity(a Activity) {
-	client.notify(fmt.Sprintf("Stopping activity: %s", a.Name))
+func (client *Client) StopActivity(a Activity) {
 
 	requestBody := &StopActivityRequest{
 		StoppedAt: TimeularTime{time.Now()},
@@ -153,18 +120,13 @@ func (client *ApiClient) stopActivity(a Activity) {
 	response := &StopActivityResponse{}
 
 	if err := client.doPost(fmt.Sprintf("/tracking/%s/stop", a.ID), requestBody, response); err != nil {
-		log.Println("Error: ", err)
 		return
 	}
 }
 
-func (client *ApiClient) notify(message string) {
-	log.Println(message)
-	client.Notifier.Push("Stopping activity", message, "", notificator.UR_NORMAL)
-}
-
-func (client *ApiClient) doPost(path string, requestObject interface{}, responseObject interface{}) error {
+func (client *Client) doPost(path string, requestObject interface{}, responseObject interface{}) error {
 	requestBody, _ := json.Marshal(requestObject)
+
 	request, _ := http.NewRequest("POST", client.BaseUrl+path, bytes.NewBuffer(requestBody))
 	request.Header.Set("Authorization", client.Token)
 	request.Header.Set("Accept", "application/json;charset:UTF-8")
@@ -181,14 +143,22 @@ func (client *ApiClient) doPost(path string, requestObject interface{}, response
 	}
 
 	if res.StatusCode != 200 {
-		message := fmt.Sprintf("API call failed. Status code: %d. Body: %s", res.StatusCode, body)
-		return errors.New(message)
+		response := ErrorResponse{}
+		err = json.Unmarshal(body, &response)
+		log.Println()
+		log.Println("========== POST call failed ==========")
+		log.Printf("Path:        %s\n", response.Path)
+		log.Printf("Status Code: %d\n", response.Status)
+		log.Printf("Error:       %s\n", response.Error)
+		log.Printf("Message:     %s\n", response.Message)
+		log.Println()
+		return errors.New(response.Message)
 	}
 
 	return json.Unmarshal(body, responseObject)
 }
 
-func (client *ApiClient) doGet(path string, response interface{}) error {
+func (client *Client) doGet(path string, response interface{}) error {
 	req, _ := http.NewRequest("GET", client.BaseUrl+path, nil)
 	req.Header.Set("Accept", "application/json;charset:UTF-8")
 	req.Header.Set("Authorization", client.Token)
@@ -203,8 +173,16 @@ func (client *ApiClient) doGet(path string, response interface{}) error {
 	body, _ := ioutil.ReadAll(res.Body)
 
 	if res.StatusCode != 200 {
-		message := fmt.Sprintf("API call failed. Status code: %d. Body: %s", res.StatusCode, body)
-		return errors.New(message)
+		response := ErrorResponse{}
+		err = json.Unmarshal(body, &response)
+		log.Println()
+		log.Println("========== GET call failed ==========")
+		log.Printf("Path:        %s\n", response.Path)
+		log.Printf("Status Code: %d\n", response.Status)
+		log.Printf("Error:       %s\n", response.Error)
+		log.Printf("Message:     %s\n", response.Message)
+		log.Println()
+		return errors.New(response.Message)
 	}
 
 	return json.Unmarshal(body, &response)

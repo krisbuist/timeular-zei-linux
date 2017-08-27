@@ -1,46 +1,49 @@
-package main
+package BlueTooth
 
 import (
 	"github.com/paypal/gatt"
 	"log"
 )
 
-const ORIENTATION_SERVICE = "c7e70010c84711e681758c89a55d403c"
-const ORIENTATION_CHARACTERISTIC = "c7e70012c84711e681758c89a55d403c"
+const (
+	orientationService        = "c7e70010c84711e681758c89a55d403c"
+	orientationCharacteristic = "c7e70012c84711e681758c89a55d403c"
+)
 
 type ZeiManager struct {
 	OnOrientationChanged func(side int)
-	Done                 chan struct{}
-	Device               gatt.Device
+
+	done                 chan struct{}
+	device               gatt.Device
 }
 
-var ClientOptions = []gatt.Option{
-	gatt.LnxMaxConnections(1),
-	gatt.LnxDeviceID(-1, true),
-}
 
-func (zm *ZeiManager) run() {
+func (zm *ZeiManager) Run() {
+	clientOptions := []gatt.Option{
+		gatt.LnxMaxConnections(1),
+		gatt.LnxDeviceID(-1, true),
+	}
 
-	device, err := gatt.NewDevice(ClientOptions...)
+	device, err := gatt.NewDevice(clientOptions...)
 
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
 		return
 	}
 
-	zm.Device = device
+	zm.device = device
 
-	zm.Done = make(chan struct{})
+	zm.done = make(chan struct{})
 
-	zm.Device.Handle(
-		gatt.PeripheralDiscovered(zm.PeripheralDiscovered),
-		gatt.PeripheralConnected(zm.PeripheralConnected),
-		gatt.PeripheralDisconnected(zm.PeripheralDisconnected),
+	zm.device.Handle(
+		gatt.PeripheralDiscovered(zm.peripheralDiscovered),
+		gatt.PeripheralConnected(zm.peripheralConnected),
+		gatt.PeripheralDisconnected(zm.peripheralDisconnected),
 	)
-	zm.Device.Init(zm.StateChanged)
+	zm.device.Init(zm.stateChanged)
 }
 
-func (zm *ZeiManager) PeripheralDiscovered(zei gatt.Peripheral, advertisement *gatt.Advertisement, i int) {
+func (zm *ZeiManager) peripheralDiscovered(zei gatt.Peripheral, advertisement *gatt.Advertisement, i int) {
 	if zei.Name() != "Timeular ZEI" {
 		return
 	}
@@ -55,19 +58,19 @@ func (zm *ZeiManager) PeripheralDiscovered(zei gatt.Peripheral, advertisement *g
 	zei.Device().Connect(zei)
 }
 
-func (zm *ZeiManager) PeripheralDisconnected(zei gatt.Peripheral, i error) {
+func (zm *ZeiManager) peripheralDisconnected(zei gatt.Peripheral, i error) {
 	log.Println("ZEI disconnected")
 
 	if i != nil {
 		log.Printf("Error: %s", i)
 	}
 
-	close(zm.Done)
-	zm.Done = make(chan struct{})
-	zm.Device.Scan([]gatt.UUID{}, false)
+	close(zm.done)
+	zm.done = make(chan struct{})
+	zm.device.Scan([]gatt.UUID{}, false)
 }
 
-func (zm *ZeiManager) PeripheralConnected(zei gatt.Peripheral, i error) {
+func (zm *ZeiManager) peripheralConnected(zei gatt.Peripheral, i error) {
 	log.Println("ZEI connected")
 	defer zei.Device().CancelConnection(zei)
 
@@ -85,7 +88,7 @@ func (zm *ZeiManager) PeripheralConnected(zei gatt.Peripheral, i error) {
 	var service *gatt.Service = nil
 
 	for _, possibleService := range services {
-		if possibleService.UUID().String() == ORIENTATION_SERVICE {
+		if possibleService.UUID().String() == orientationService {
 			service = possibleService
 		}
 	}
@@ -105,7 +108,7 @@ func (zm *ZeiManager) PeripheralConnected(zei gatt.Peripheral, i error) {
 	var char *gatt.Characteristic = nil
 
 	for _, possibleChar := range characteristics {
-		if possibleChar.UUID().String() == ORIENTATION_CHARACTERISTIC {
+		if possibleChar.UUID().String() == orientationCharacteristic {
 			char = possibleChar
 		}
 	}
@@ -134,7 +137,7 @@ func (zm *ZeiManager) PeripheralConnected(zei gatt.Peripheral, i error) {
 		return
 	}
 
-	<-zm.Done
+	<-zm.done
 }
 
 func (zm *ZeiManager) onIndicate(c *gatt.Characteristic, b []byte, err error) {
@@ -143,10 +146,10 @@ func (zm *ZeiManager) onIndicate(c *gatt.Characteristic, b []byte, err error) {
 		return
 	}
 
-	zm.OnOrientationChanged(int(b[0]))
+	go zm.OnOrientationChanged(int(b[0]))
 }
 
-func (zm *ZeiManager) StateChanged(device gatt.Device, state gatt.State) {
+func (zm *ZeiManager) stateChanged(device gatt.Device, state gatt.State) {
 	log.Printf("State: %s\n", state)
 	switch state {
 	case gatt.StatePoweredOn:

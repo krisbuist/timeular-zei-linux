@@ -1,16 +1,16 @@
-package main
+package API
 
 import (
-	"time"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type TimeularTime struct {
 	time.Time
 }
 
-const FORMAT = "2006-01-02T15:04:05.999"
+const FORMAT = "2006-01-02T15:04:05.000"
 
 func (t *TimeularTime) MarshalJSON() ([]byte, error) {
 	loc, _ := time.LoadLocation("UTC")
