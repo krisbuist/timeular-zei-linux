@@ -8,31 +8,39 @@ import (
 const ORIENTATION_SERVICE = "c7e70010c84711e681758c89a55d403c"
 const ORIENTATION_CHARACTERISTIC = "c7e70012c84711e681758c89a55d403c"
 
+type ZeiManager struct {
+	OnOrientationChanged func(side int)
+	Done                 chan struct{}
+	Device               gatt.Device
+}
+
 var ClientOptions = []gatt.Option{
 	gatt.LnxMaxConnections(1),
 	gatt.LnxDeviceID(-1, true),
 }
-var done = make(chan struct{})
 
-func main() {
-	d, err := gatt.NewDevice(ClientOptions...)
+func (zm *ZeiManager) run() {
+
+	device, err := gatt.NewDevice(ClientOptions...)
+
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
 		return
 	}
 
-	d.Handle(
-		gatt.PeripheralDiscovered(onPeripheralDiscovered),
-		gatt.PeripheralConnected(onPeripheralConnected),
-		gatt.PeripheralDisconnected(onPeripheralDisconnected),
-	)
+	zm.Device = device
 
-	d.Init(onStateChanged)
-	<-done
-	log.Println("Done")
+	zm.Done = make(chan struct{})
+
+	zm.Device.Handle(
+		gatt.PeripheralDiscovered(zm.PeripheralDiscovered),
+		gatt.PeripheralConnected(zm.PeripheralConnected),
+		gatt.PeripheralDisconnected(zm.PeripheralDisconnected),
+	)
+	zm.Device.Init(zm.StateChanged)
 }
 
-func onPeripheralDiscovered(zei gatt.Peripheral, advertisement *gatt.Advertisement, i int) {
+func (zm *ZeiManager) PeripheralDiscovered(zei gatt.Peripheral, advertisement *gatt.Advertisement, i int) {
 	if zei.Name() != "Timeular ZEI" {
 		return
 	}
@@ -47,12 +55,19 @@ func onPeripheralDiscovered(zei gatt.Peripheral, advertisement *gatt.Advertiseme
 	zei.Device().Connect(zei)
 }
 
-func onPeripheralDisconnected(zei gatt.Peripheral, i error) {
+func (zm *ZeiManager) PeripheralDisconnected(zei gatt.Peripheral, i error) {
 	log.Println("ZEI disconnected")
-	close(done)
+
+	if i != nil {
+		log.Printf("Error: %s", i)
+	}
+
+	close(zm.Done)
+	zm.Done = make(chan struct{})
+	zm.Device.Scan([]gatt.UUID{}, false)
 }
 
-func onPeripheralConnected(zei gatt.Peripheral, i error) {
+func (zm *ZeiManager) PeripheralConnected(zei gatt.Peripheral, i error) {
 	log.Println("ZEI connected")
 	defer zei.Device().CancelConnection(zei)
 
@@ -80,8 +95,6 @@ func onPeripheralConnected(zei gatt.Peripheral, i error) {
 		return
 	}
 
-	log.Printf("Found orientation service: %s\n", service.UUID().String())
-
 	characteristics, err := zei.DiscoverCharacteristics(nil, service)
 
 	if err != nil {
@@ -102,40 +115,39 @@ func onPeripheralConnected(zei gatt.Peripheral, i error) {
 		return
 	}
 
-	log.Printf("Found characteristic: %s\n", char.UUID().String())
-
 	if (char.Properties() & gatt.CharIndicate) == 0 {
 		log.Println("Characteristic does not support indicate")
 		return
 	}
 
-	ds, err := zei.DiscoverDescriptors(nil, char)
+	_, err = zei.DiscoverDescriptors(nil, char)
 	if err != nil {
 		log.Printf("Failed to discover descriptors, err: %s\n", err)
 		return
 	}
 
-	log.Printf("%d descriptors found\n", len(ds))
+	value, err := zei.ReadCharacteristic(char)
+	zm.onIndicate(char, value, err)
 
-	if err := zei.SetIndicateValue(char, onIndicate); err != nil {
+	if err := zei.SetIndicateValue(char, zm.onIndicate); err != nil {
 		log.Printf("Failed to subscribe characteristic, err: %s\n", err)
 		return
 	}
 
-	<-done
+	<-zm.Done
 }
 
-func onIndicate(c *gatt.Characteristic, b []byte, err error) {
+func (zm *ZeiManager) onIndicate(c *gatt.Characteristic, b []byte, err error) {
 	if err != nil {
 		log.Printf("Failed reading the client characteristic")
 		return
 	}
 
-	log.Printf("Orientation changed %s: %x\n", c.Name(), b)
+	zm.OnOrientationChanged(int(b[0]))
 }
 
-func onStateChanged(device gatt.Device, state gatt.State) {
-	log.Println("State:", state)
+func (zm *ZeiManager) StateChanged(device gatt.Device, state gatt.State) {
+	log.Printf("State: %s\n", state)
 	switch state {
 	case gatt.StatePoweredOn:
 		log.Println("Scanning...")
