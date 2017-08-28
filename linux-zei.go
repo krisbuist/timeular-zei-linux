@@ -16,13 +16,13 @@ func main() {
 	state := &API.Timeular{}
 
 	if err := client.Authenticate(); err != nil {
-		panic(fmt.Sprintf("Could not authenticate. Err: %s\n", err))
+		log.Fatalf("Could not authenticate. Err: %s\n", err)
 	}
 	log.Println("API client authenticated")
 
 	activities, err := client.GetActivities()
 	if err != nil {
-		panic(fmt.Sprintf("Loading activities failed. Err: %s\n", err))
+		log.Fatalf("Loading activities failed. Err: %s\n", err)
 	}
 	state.Activities = activities
 	log.Println("Activities loaded")
