@@ -59,5 +59,5 @@ func main() {
 
 	manager.Run()
 
-	<-manager.Done
+	<-make(chan struct{})
 }

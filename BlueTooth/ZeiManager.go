@@ -15,12 +15,9 @@ const (
 
 type ZeiManager struct {
 	OnOrientationChanged func(side int)
-	Done chan struct{}
 }
 
 func (zm *ZeiManager) Run() {
-	zm.Done = make(chan struct{})
-
 	d, err := linux.NewDevice()
 	if err != nil {
 		log.Fatalf("Can't create new device : %service", err)
@@ -67,20 +64,20 @@ func (zm *ZeiManager) connectAndRun() {
 				continue
 			}
 
-			callback := func(val []byte) {
-				go zm.OnOrientationChanged(int(val[0]))
-			}
-			if err := cln.Subscribe(char, true, callback); err != nil {
-				log.Fatalf("Subscribe failed: %s\n", err)
-			}
-			log.Println("Subscribed to notifications")
-
-
+			// Do an initial read on the device side to know the starting position
 			val, err := cln.ReadCharacteristic(char)
 			if err != nil {
 				log.Fatalf("Failed to read characteristic: %s\n", err)
 			}
 			go zm.OnOrientationChanged(int(val[0]))
+
+			err = cln.Subscribe(char, true, func(val []byte) {
+				go zm.OnOrientationChanged(int(val[0]))
+			})
+			if err != nil {
+				log.Fatalf("Subscribing failed: %s\n", err)
+			}
+			log.Println("Subscribed to ZEI side changes")
 		}
 	}
 
