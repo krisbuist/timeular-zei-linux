@@ -27,37 +27,37 @@ func main() {
 	state.Activities = activities
 	log.Println("Activities loaded")
 
-	manager := BlueTooth.ZeiManager{}
-
 	notification := Notification.NewDesktop()
 
-	manager.OnOrientationChanged = func(sideID int) {
-		log.Printf("Device side: %d", sideID)
+	manager := BlueTooth.ZeiManager{
+		OnOrientationChanged: func(sideID int) {
+			log.Printf("Device side: %d", sideID)
 
-		activity := state.GetActivity(sideID)
-		current, err := client.GetCurrentTracking()
+			activity := state.GetActivity(sideID)
+			current, err := client.GetCurrentTracking()
 
-		if err != nil {
-			log.Println("Error: ", err)
-			return
-		}
+			if err != nil {
+				log.Println("Error: ", err)
+				return
+			}
 
-		if current != nil && activity != nil && current.Activity.ID == activity.ID {
-			return
-		}
+			if current != nil && activity != nil && current.Activity.ID == activity.ID {
+				return
+			}
 
-		if current != nil {
-			go notification.Notify(fmt.Sprintf("Stopping activity: %s", current.Activity.Name))
-			client.StopActivity(current.Activity)
-		}
+			if current != nil {
+				go notification.Notify(fmt.Sprintf("Stopping activity: %s", current.Activity.Name))
+				client.StopActivity(current.Activity)
+			}
 
-		if activity != nil {
-			go notification.Notify(fmt.Sprintf("Starting activity: %s", activity.Name))
-			client.StartActivity(*activity)
-		}
+			if activity != nil {
+				go notification.Notify(fmt.Sprintf("Starting activity: %s", activity.Name))
+				client.StartActivity(*activity)
+			}
+		},
 	}
 
 	manager.Run()
 
-	<-make(chan struct{})
+	<-manager.Done
 }
