@@ -45,14 +45,25 @@ func main() {
 				return
 			}
 
-			if current != nil {
-				go notification.Notify(fmt.Sprintf("Stopping activity: %s", current.Activity.Name))
-				client.StopActivity(current.Activity)
+			if current != nil && activity == nil {
+				go notification.Notify("Stopping activity", current.Activity.Name)
+				go client.StopActivity(current.Activity)
 			}
 
-			if activity != nil {
-				go notification.Notify(fmt.Sprintf("Starting activity: %s", activity.Name))
-				client.StartActivity(*activity)
+			if activity != nil && current == nil {
+				go notification.Notify("Starting activity", activity.Name)
+				go client.StartActivity(*activity)
+			}
+
+			if current != nil && activity != nil {
+				go notification.Notify(
+					"Switching activity",
+					fmt.Sprintf("%s → %s", current.Activity.Name, activity.Name),
+				)
+				go func() {
+					client.StopActivity(current.Activity)
+					client.StartActivity(*activity)
+				}()
 			}
 		},
 	}

@@ -19,7 +19,7 @@ func NewDesktop() Desktop {
 	})}
 }
 
-func (n *Desktop) Notify(message string) {
+func (n *Desktop) Notify(title, message string) {
 	log.Println(message)
-	n.notifier.Push("Timeular activity", message, "", notificator.UR_NORMAL)
+	n.notifier.Push(title, message, "", notificator.UR_NORMAL)
 }
