@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"timeular-zei-linux/API"
-	"timeular-zei-linux/BlueTooth"
-	"timeular-zei-linux/Notification"
+	"github.com/krisbuist/timeular-zei-linux/API"
+	"github.com/krisbuist/timeular-zei-linux/BlueTooth"
+	"github.com/krisbuist/timeular-zei-linux/Notification"
 )
 
 func main() {
