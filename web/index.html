@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Timeular</title>
+    <script src="node_modules/vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <p>Current side: {{CurrentSide}}</p>
+    <p v-if="Tracking">Tracking: {{Tracking.activity.name}}</p>
+    <ul>
+        <li v-for="a in Activities">
+            {{a.name}} - {{a.id}}
+        </li>
+    </ul>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

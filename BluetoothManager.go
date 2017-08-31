@@ -1,4 +1,4 @@
-package BlueTooth
+package main
 
 import (
 	"github.com/currantlabs/ble"
@@ -13,21 +13,21 @@ const (
 	orientationCharacteristic = "c7e70012c84711e681758c89a55d403c"
 )
 
-type ZeiManager struct {
+type BluetoothManager struct {
 	OnOrientationChanged func(side int)
 }
 
-func (zm *ZeiManager) Run() {
+func (bm *BluetoothManager) Run() {
 	d, err := linux.NewDevice()
 	if err != nil {
 		log.Fatalf("Can't create new device : %service", err)
 	}
 	ble.SetDefaultDevice(d)
 
-	zm.connectAndRun()
+	bm.connectAndRun()
 }
 
-func (zm *ZeiManager) connectAndRun() {
+func (bm *BluetoothManager) connectAndRun() {
 	log.Println("Trying to connect to the ZEI")
 
 	cln, err := ble.Connect(context.Background(), func(a ble.Advertisement) bool {
@@ -69,10 +69,10 @@ func (zm *ZeiManager) connectAndRun() {
 			if err != nil {
 				log.Fatalf("Failed to read characteristic: %s\n", err)
 			}
-			go zm.OnOrientationChanged(int(val[0]))
+			go bm.OnOrientationChanged(int(val[0]))
 
 			err = cln.Subscribe(char, true, func(val []byte) {
-				go zm.OnOrientationChanged(int(val[0]))
+				go bm.OnOrientationChanged(int(val[0]))
 			})
 			if err != nil {
 				log.Fatalf("Subscribing failed: %s\n", err)
@@ -82,5 +82,5 @@ func (zm *ZeiManager) connectAndRun() {
 	}
 
 	<-done
-	zm.connectAndRun()
+	bm.connectAndRun()
 }

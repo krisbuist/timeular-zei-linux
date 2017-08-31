@@ -3,22 +3,26 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/krisbuist/timeular-zei-linux/API"
-	"github.com/krisbuist/timeular-zei-linux/BlueTooth"
-	"github.com/krisbuist/timeular-zei-linux/Notification"
+	"time"
 )
 
+
 func main() {
-	client := &API.Client{
+	hub := newHub()
+	go hub.run()
+
+	go RunWebserver(hub)
+
+	client := &APIClient{
 		BaseUrl: "https://api.timeular.com/api/v1/",
 	}
 
-	state := &API.Timeular{}
+	state := &Timeular{}
 
 	if err := client.Authenticate(); err != nil {
 		log.Fatalf("Could not authenticate. Err: %s\n", err)
 	}
-	log.Println("API client authenticated")
+	log.Println("API server authenticated")
 
 	activities, err := client.GetActivities()
 	if err != nil {
@@ -27,9 +31,9 @@ func main() {
 	state.Activities = activities
 	log.Println("Activities loaded")
 
-	notification := Notification.NewDesktop()
+	notification := NewNotification()
 
-	manager := BlueTooth.ZeiManager{
+	manager := BluetoothManager{
 		OnOrientationChanged: func(sideID int) {
 			log.Printf("Device side: %d", sideID)
 
@@ -65,6 +69,17 @@ func main() {
 					client.StartActivity(*activity)
 				}()
 			}
+
+			state.CurrentSide = sideID
+			state.Tracking = &CurrentTracking{
+				Activity: *activity,
+				StartedAt: TimeularTime{time.Now()},
+				Note: "",
+			}
+
+			go func() {
+				hub.broadcast <- state
+			}()
 		},
 	}
 

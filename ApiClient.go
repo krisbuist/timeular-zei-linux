@@ -1,4 +1,4 @@
-package API
+package main
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type Client struct {
+type APIClient struct {
 	BaseUrl string
 	Token   string
 }
@@ -58,7 +58,7 @@ type ErrorResponse struct {
 	Path      string `json:"path"`
 }
 
-func (client *Client) Authenticate() error {
+func (client *APIClient) Authenticate() error {
 	authString, _ := ioutil.ReadFile("./config.json")
 	request := &AuthorizationRequest{}
 	json.Unmarshal(authString, request)
@@ -74,7 +74,7 @@ func (client *Client) Authenticate() error {
 	return nil
 }
 
-func (client *Client) GetCurrentTracking() (*CurrentTracking, error) {
+func (client *APIClient) GetCurrentTracking() (*CurrentTracking, error) {
 
 	response := &CurrentTrackingResponse{}
 
@@ -85,7 +85,7 @@ func (client *Client) GetCurrentTracking() (*CurrentTracking, error) {
 	return response.CurrentTracking, nil
 }
 
-func (client *Client) GetActivities() ([]Activity, error) {
+func (client *APIClient) GetActivities() ([]Activity, error) {
 
 	response := &ActivitiesResponse{}
 
@@ -96,7 +96,7 @@ func (client *Client) GetActivities() ([]Activity, error) {
 	return response.Activities, nil
 }
 
-func (client *Client) StartActivity(a Activity) *CurrentTracking {
+func (client *APIClient) StartActivity(a Activity) *CurrentTracking {
 
 	requestBody := &StartActivityRequest{
 		StartedAt: TimeularTime{time.Now()},
@@ -111,7 +111,7 @@ func (client *Client) StartActivity(a Activity) *CurrentTracking {
 	return &response.CurrentTracking
 }
 
-func (client *Client) StopActivity(a Activity) {
+func (client *APIClient) StopActivity(a Activity) {
 
 	requestBody := &StopActivityRequest{
 		StoppedAt: TimeularTime{time.Now()},
@@ -124,7 +124,7 @@ func (client *Client) StopActivity(a Activity) {
 	}
 }
 
-func (client *Client) doPost(path string, requestObject interface{}, responseObject interface{}) error {
+func (client *APIClient) doPost(path string, requestObject interface{}, responseObject interface{}) error {
 	requestBody, _ := json.Marshal(requestObject)
 
 	request, _ := http.NewRequest("POST", client.BaseUrl+path, bytes.NewBuffer(requestBody))
@@ -158,7 +158,7 @@ func (client *Client) doPost(path string, requestObject interface{}, responseObj
 	return json.Unmarshal(body, responseObject)
 }
 
-func (client *Client) doGet(path string, response interface{}) error {
+func (client *APIClient) doGet(path string, response interface{}) error {
 	req, _ := http.NewRequest("GET", client.BaseUrl+path, nil)
 	req.Header.Set("Accept", "application/json;charset:UTF-8")
 	req.Header.Set("Authorization", client.Token)

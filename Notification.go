@@ -1,4 +1,4 @@
-package Notification
+package main
 
 import (
 	"github.com/0xAX/notificator"
@@ -6,20 +6,20 @@ import (
 	"log"
 )
 
-type Desktop struct {
+type Notification struct {
 	notifier *notificator.Notificator
 }
 
-func NewDesktop() Desktop {
+func NewNotification() Notification {
 	path, _ := filepath.Abs("./")
 
-	return Desktop{notificator.New(notificator.Options{
+	return Notification{notificator.New(notificator.Options{
 		DefaultIcon: path + "/timeular.png",
 		AppName:     "ZEI",
 	})}
 }
 
-func (n *Desktop) Notify(title, message string) {
+func (n *Notification) Notify(title, message string) {
 	log.Println(message)
 	n.notifier.Push(title, message, "", notificator.UR_NORMAL)
 }
