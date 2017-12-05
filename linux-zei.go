@@ -49,12 +49,13 @@ func main() {
 				return
 			}
 
-			if current != nil && activity == nil {
+			if current != nil && ( activity == nil || sideID == 0 ) {
 				go notification.Notify("Stopping activity", current.Activity.Name)
 				go client.StopActivity(current.Activity)
+				return
 			}
 
-			if activity != nil && current == nil {
+			if activity != nil && current == nil && sideID != 0 {
 				go notification.Notify("Starting activity", activity.Name)
 				go client.StartActivity(*activity)
 			}
