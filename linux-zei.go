@@ -70,11 +70,14 @@ func main() {
 				}()
 			}
 
-			state.CurrentSide = sideID
-			state.Tracking = &CurrentTracking{
-				Activity: *activity,
-				StartedAt: TimeularTime{time.Now()},
-				Note: "",
+
+			if (activity != nil) {
+				state.CurrentSide = sideID
+				state.Tracking = &CurrentTracking{
+					Activity: *activity,
+					StartedAt: TimeularTime{time.Now()},
+					Note: "",
+				}
 			}
 
 			go func() {
