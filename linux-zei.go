@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-
 func main() {
 	hub := newHub()
 	go hub.run()
@@ -70,13 +69,12 @@ func main() {
 				}()
 			}
 
-
-			if (activity != nil) {
+			if activity != nil {
 				state.CurrentSide = sideID
 				state.Tracking = &CurrentTracking{
-					Activity: *activity,
+					Activity:  *activity,
 					StartedAt: TimeularTime{time.Now()},
-					Note: "",
+					Note:      "",
 				}
 			}
 

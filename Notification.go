@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/0xAX/notificator"
-	"path/filepath"
 	"log"
+	"path/filepath"
 )
 
 type Notification struct {

@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/currantlabs/ble"
+	"github.com/currantlabs/ble/linux"
+	"golang.org/x/net/context"
 	"log"
 	"strings"
-	"golang.org/x/net/context"
-	"github.com/currantlabs/ble/linux"
 )
 
 const (

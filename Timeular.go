@@ -1,9 +1,9 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Activity struct {

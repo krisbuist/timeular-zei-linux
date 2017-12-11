@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
-	"log"
-	"time"
-	"github.com/gorilla/websocket"
 	"encoding/json"
+	"github.com/gorilla/websocket"
+	"log"
+	"net/http"
+	"time"
 )
 
 type Client struct {
