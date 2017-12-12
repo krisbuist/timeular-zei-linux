@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <title>Timeular</title>
     <script src="node_modules/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <div id="app">
-    <p>Current side: {{CurrentSide}}</p>
-    <p v-if="Tracking">Tracking: {{Tracking.activity.name}}</p>
-    <ul>
-        <li v-for="a in Activities">
-            {{a.name}} - {{a.id}}
+    <ul class="activities">
+        <li v-for="a in orderedActivities"
+            v-bind:class="{ active: tracking && tracking.activity && tracking.activity.id == a.id }">
+            {{a.deviceSide}}: {{a.name}}
         </li>
     </ul>
 </div>
+<script src="node_modules/lodash/lodash.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+ul.activities li.active {
+    font-weight: bold;
+}
+
+ul.activities {
+    list-style: none;
+}

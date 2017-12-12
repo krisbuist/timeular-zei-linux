@@ -1,0 +1,11 @@
+{
+  "name": "timeular-webclient",
+  "version": "1.0.0",
+  "description": "Webclient for connecting to the timeular zei linux application",
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "vue": "^2.4.2"
+  },
+  "author": "Kris Buist <krisbuist@gmail.com>",
+  "license": "MIT License"
+}
