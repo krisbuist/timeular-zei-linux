@@ -38,7 +38,7 @@ func RunWebserver(hub *Hub) {
 	})
 	http.Handle("/", http.FileServer(http.Dir("web/")))
 
-	log.Printf("Webserver started")
+	log.Printf("Webserver started on port 6677")
 	log.Fatal(http.ListenAndServe(":6677", nil))
 }
 

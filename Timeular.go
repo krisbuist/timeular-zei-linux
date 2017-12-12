@@ -15,7 +15,7 @@ type Activity struct {
 }
 
 type CurrentTracking struct {
-	Activity  Activity     `json:"activity"`
+	Activity  *Activity    `json:"activity"`
 	StartedAt TimeularTime `json:"startedAt"`
 	Note      string       `json:"note"`
 }

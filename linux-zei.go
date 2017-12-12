@@ -50,7 +50,7 @@ func main() {
 
 			if current != nil && activity == nil {
 				go notification.Notify("Stopping activity", current.Activity.Name)
-				go client.StopActivity(current.Activity)
+				go client.StopActivity(*current.Activity)
 			}
 
 			if activity != nil && current == nil {
@@ -64,18 +64,16 @@ func main() {
 					fmt.Sprintf("%s → %s", current.Activity.Name, activity.Name),
 				)
 				go func() {
-					client.StopActivity(current.Activity)
+					client.StopActivity(*current.Activity)
 					client.StartActivity(*activity)
 				}()
 			}
 
-			if activity != nil {
-				state.CurrentSide = sideID
-				state.Tracking = &CurrentTracking{
-					Activity:  *activity,
-					StartedAt: TimeularTime{time.Now()},
-					Note:      "",
-				}
+			state.CurrentSide = sideID
+			state.Tracking = &CurrentTracking{
+				Activity:  activity,
+				StartedAt: TimeularTime{time.Now()},
+				Note:      "",
 			}
 
 			go func() {
