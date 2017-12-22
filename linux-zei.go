@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -13,6 +14,8 @@ func main() {
 
 	go RunWebserver(hub)
 
+	pause := flag.Int("pause", -5, "cube side to use for pause")
+	
 	client := &APIClient{
 		BaseUrl: "https://api.timeular.com/api/v1/",
 	}
@@ -49,18 +52,17 @@ func main() {
 				return
 			}
 
-			if current != nil && ( activity == nil || sideID == 0 ) {
+			if current != nil && ( activity == nil || sideID == *pause ) {
 				go notification.Notify("Stopping activity", current.Activity.Name)
 				go client.StopActivity(current.Activity)
-				return
 			}
 
-			if activity != nil && current == nil && sideID != 0 {
+			if activity != nil && current == nil && sideID != *pause {
 				go notification.Notify("Starting activity", activity.Name)
 				go client.StartActivity(*activity)
 			}
 
-			if current != nil && activity != nil {
+			if current != nil && activity != nil && sideID != *pause {
 				go notification.Notify(
 					"Switching activity",
 					fmt.Sprintf("%s → %s", current.Activity.Name, activity.Name),
@@ -71,11 +73,13 @@ func main() {
 				}()
 			}
 
-			state.CurrentSide = sideID
-			state.Tracking = &CurrentTracking{
-				Activity: *activity,
-				StartedAt: TimeularTime{time.Now()},
-				Note: "",
+			if sideID != *pause {
+				state.CurrentSide = sideID
+				state.Tracking = &CurrentTracking{
+					Activity: *activity,
+					StartedAt: TimeularTime{time.Now()},
+					Note: "",
+				}
 			}
 
 			go func() {
