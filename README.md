@@ -17,6 +17,5 @@ Very basic Linux client for the Timeular ZEI, due to lack of a Linux implementat
 ```
 3. Go get
 4. Go build
-5. Run the binary as superuser (sudo ./timeular-zei-linux)
-
-It is necessary to run as superuser in order to communicate with the Bluetooth device
+5. Give the client enough capabilities to open RAW sockets: sudo setcap cap_net_raw,cap_net_admin+eip timeular-zei-linux
+6. Start the application: ./timeular-zei-linux
