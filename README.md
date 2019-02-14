@@ -8,14 +8,14 @@ Very basic Linux client for the Timeular ZEI, due to lack of a Linux implementat
 # Usage
 
 1. Create an API key on your [profile page](https://profile.timeular.com)
-2. Copy the API key and secret into a config.json file
+2. Copy the API key and secret into the `config.json` file in the root of the project
 ```json
 {
   "apiKey": "my-api-key",
   "apiSecret": "my-api-secret"
 }
 ```
-3. Go get
-4. Go build
-5. Give the client enough capabilities to open RAW sockets: sudo setcap cap_net_raw,cap_net_admin+eip timeular-zei-linux
-6. Start the application: ./timeular-zei-linux
+3. Run `go get`
+4. Run `go build`
+5. Give the client enough capabilities to open RAW sockets: `sudo setcap cap_net_raw,cap_net_admin+eip timeular-zei-linux`
+6. Start the application: `./timeular-zei-linux`
