@@ -59,7 +59,10 @@ type ErrorResponse struct {
 }
 
 func (client *APIClient) Authenticate() error {
-	authString, _ := ioutil.ReadFile("./config.json")
+	authString, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+		return err
+	}
 	request := &AuthorizationRequest{}
 	json.Unmarshal(authString, request)
 
