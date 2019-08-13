@@ -25,6 +25,17 @@ type AuthorizationResponse struct {
 	Token string `json:"token"`
 }
 
+type ActivateDeviceParam struct {
+	Serial string `json:"deviceSerial"`
+}
+
+type ActivateDeviceResponse struct {
+	Serial   string `json:"serial"`
+	Name     string `json:"name"`
+	Active   bool   `json:"active"`
+	Disabled bool   `json:"disabled"`
+}
+
 type ActivitiesResponse struct {
 	Activities []Activity `json:"activities"`
 }
@@ -59,12 +70,12 @@ type ErrorResponse struct {
 }
 
 func (client *APIClient) Authenticate() error {
-	authString, err := ioutil.ReadFile("./config.json")
+	config, err := ioutil.ReadFile("./config.json")
 	if err != nil {
 		return err
 	}
 	request := &AuthorizationRequest{}
-	json.Unmarshal(authString, request)
+	json.Unmarshal(config, request)
 
 	response := &AuthorizationResponse{}
 
@@ -74,6 +85,29 @@ func (client *APIClient) Authenticate() error {
 
 	client.Token = "Bearer " + response.Token
 
+	return nil
+}
+
+func (client *APIClient) ActivateDevice() error {
+	config, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+		return err
+	}
+	param := &ActivateDeviceParam{}
+	json.Unmarshal(config, param)
+
+	if param.Serial == "" {
+		log.Println("Not activating any specific device")
+		return nil
+	}
+
+	response := &ActivateDeviceResponse{}
+
+	if err := client.doPost(fmt.Sprintf("/devices/%s/active", param.Serial), nil, response); err != nil {
+		return err
+	}
+
+	log.Printf("Device %s activated\n", param.Serial)
 	return nil
 }
 
