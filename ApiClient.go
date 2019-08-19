@@ -107,7 +107,7 @@ func (client *APIClient) ActivateDevice() error {
 		return err
 	}
 
-	log.Printf("Device %s activated\n", param.Serial)
+	log.Printf("Device %s activated", param.Serial)
 	return nil
 }
 
