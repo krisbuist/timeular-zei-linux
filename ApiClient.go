@@ -16,12 +16,12 @@ type APIClient struct {
 	Token   string
 }
 
-type AuthorizationRequest struct {
+type AuthenticationRequest struct {
 	ApiKey    string `json:"apiKey"`
 	ApiSecret string `json:"apiSecret"`
 }
 
-type AuthorizationResponse struct {
+type AuthenticationResponse struct {
 	Token string `json:"token"`
 }
 
@@ -74,10 +74,10 @@ func (client *APIClient) Authenticate() error {
 	if err != nil {
 		return err
 	}
-	request := &AuthorizationRequest{}
+	request := &AuthenticationRequest{}
 	json.Unmarshal(config, request)
 
-	response := &AuthorizationResponse{}
+	response := &AuthenticationResponse{}
 
 	if err := client.doPost("/developer/sign-in", request, response); err != nil {
 		return err
