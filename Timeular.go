@@ -11,7 +11,7 @@ type Activity struct {
 	Name        string `json:"name"`
 	Color       string `json:"color"`
 	Integration string `json:"integration"`
-	DeviceSide  int    `json:"deviceSide"`
+	DeviceSide  *int   `json:"deviceSide"`
 }
 
 type CurrentTracking struct {
@@ -34,7 +34,7 @@ type Timeular struct {
 
 func (timeular *Timeular) GetActivity(deviceSide int) *Activity {
 	for _, a := range timeular.Activities {
-		if a.DeviceSide == deviceSide {
+		if a.DeviceSide != nil && *a.DeviceSide == deviceSide {
 			return &a
 		}
 	}

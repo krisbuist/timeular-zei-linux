@@ -23,6 +23,10 @@ func main() {
 	}
 	log.Println("API server authenticated")
 
+	if err := client.ActivateDevice(); err != nil {
+		log.Fatalf("Could not activate device. Err: %s\n", err)
+	}
+
 	activities, err := client.GetActivities()
 	if err != nil {
 		log.Fatalf("Loading activities failed. Err: %s\n", err)

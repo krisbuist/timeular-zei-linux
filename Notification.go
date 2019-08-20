@@ -20,6 +20,6 @@ func NewNotification() Notification {
 }
 
 func (n *Notification) Notify(title, message string) {
-	log.Println(message)
+	log.Printf("%s: %s", title, message)
 	n.notifier.Push(title, message, "", notificator.UR_NORMAL)
 }
