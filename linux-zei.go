@@ -13,7 +13,7 @@ func main() {
 	go RunWebserver(hub)
 
 	client := &APIClient{
-		BaseUrl: "https://api.timeular.com/api/v1/",
+		BaseUrl: "https://api.timeular.com/api/v1",
 	}
 
 	state := &Timeular{}
